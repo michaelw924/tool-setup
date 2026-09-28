@@ -44,6 +44,18 @@ get_ip_address() {
     echo "$ip"
 }
 
+detect_platform() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        PLATFORM="macos"
+    elif [[ -f /etc/os-release ]]; then
+        . /etc/os-release
+        PLATFORM="$ID"
+    else
+        PLATFORM="unknown"
+    fi
+    echo "Detected platform: $PLATFORM"
+}
+
 install_opencode() {
     echo "=== Installing OpenCode ==="
     
@@ -51,10 +63,8 @@ install_opencode() {
     if command -v opencode &> /dev/null; then
         echo "OpenCode is already installed."
     else
-        echo "Downloading and compiling OpenCode..."
-        # Adjust based on actual installation method
-        # Example: download binary, compile from source, etc.
-        echo "OpenCode installation steps would go here."
+        echo "Installing OpenCode..."
+        curl -fsSL https://opencode.ai/v2/install | bash
     fi
     
     if ask_confirm "Install OpenCode personal config?"; then
@@ -63,14 +73,12 @@ install_opencode() {
         # Create config directory if it doesn't exist
         mkdir -p ~/.config/opencode
         
-        # Clone the config repo (or copy if local)
+        # Clone the config repo
         if [[ -d "$OPENCODE_CONFIG_URL" ]]; then
             cp -r "$OPENCODE_CONFIG_URL"/* ~/.config/opencode/
         else
             echo "Cloning config repo..."
-            # For SSH access: git clone git@github.com:${GITHUB_USER}/opencode-config.git ~/.config/opencode
-            # For HTTPS with credentials: git clone https://github.com/${GITHUB_USER}/opencode-config.git ~/.config/opencode
-            echo "Run: git clone git@github.com:${GITHUB_USER}/opencode-config.git ~/.config/opencode"
+            git clone "$OPENCODE_CONFIG_URL" ~/.config/opencode
         fi
         
         # Prompt for local server IP
@@ -96,10 +104,25 @@ install_neovim() {
         echo "Neovim is already installed (version: $(nvim --version | head -1))"
     else
         echo "Installing Neovim..."
-        # Ubuntu/Debian example:
-        # sudo apt-get update && sudo apt-get install -y neovim
-        # Or compile from source
-        echo "Neovim installation steps would go here."
+        detect_platform
+        
+        case "$PLATFORM" in
+            macos)
+                brew install neovim
+                ;;
+            ubuntu|debian)
+                sudo apt-get update && sudo apt-get install -y neovim
+                ;;
+            arch)
+                sudo pacman -S --noconfirm neovim
+                ;;
+            *)
+                echo "Platform $PLATFORM detected. Install Neovim manually:"
+                echo "  macOS: brew install neovim"
+                echo "  Ubuntu/Debian: sudo apt install neovim"
+                echo "  Arch: sudo pacman -S neovim"
+                ;;
+        esac
     fi
     
     if ask_confirm "Install Neovim personal config?"; then
@@ -120,10 +143,25 @@ install_tmux() {
         echo "tmux is already installed (version: $(tmux -V))"
     else
         echo "Installing tmux..."
-        # Ubuntu/Debian example:
-        # sudo apt-get update && sudo apt-get install -y tmux
-        # Or compile from source
-        echo "tmux installation steps would go here."
+        detect_platform
+        
+        case "$PLATFORM" in
+            macos)
+                brew install tmux
+                ;;
+            ubuntu|debian)
+                sudo apt-get update && sudo apt-get install -y tmux
+                ;;
+            arch)
+                sudo pacman -S --noconfirm tmux
+                ;;
+            *)
+                echo "Platform $PLATFORM detected. Install tmux manually:"
+                echo "  macOS: brew install tmux"
+                echo "  Ubuntu/Debian: sudo apt install tmux"
+                echo "  Arch: sudo pacman -S tmux"
+                ;;
+        esac
     fi
     
     if ask_confirm "Install tmux config?"; then
