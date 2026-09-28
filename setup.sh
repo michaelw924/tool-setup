@@ -6,10 +6,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_REPO_URL="https://github.com/yourusername/tool-setup.git"
-OPENCODE_CONFIG_URL="https://github.com/yourusername/opencode-config.git"
-NEOVIM_CONFIG_URL="https://github.com/yourusername/neovim-config.git"
-TMUX_CONFIG_URL="https://github.com/yourusername/tmux-config.git"
+GITHUB_USER="michaelw924"
+TOOLS_REPO_URL="https://github.com/${GITHUB_USER}/tool-setup.git"
+OPENCODE_CONFIG_URL="https://github.com/${GITHUB_USER}/opencode-config.git"
+NEOVIM_CONFIG_URL="https://github.com/${GITHUB_USER}/nvim-config.git"
+TMUX_CONFIG_URL="https://github.com/${GITHUB_USER}/tmux-config.git"
 
 ask_confirm() {
     local prompt="$1"
@@ -78,8 +79,8 @@ install_tmux() {
         echo "tmux installation steps would go here."
     fi
     
-    if ask_confirm "Install tmux personal config?"; then
-        echo "Installing tmux config from $NEOVIM_CONFIG_URL"
+    if ask_confirm "Install tmux config?"; then
+        echo "Installing tmux config from $TMUX_CONFIG_URL"
         # Clone config and symlink files
     else
         echo "Skipping tmux config installation."
