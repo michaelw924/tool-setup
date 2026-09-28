@@ -24,6 +24,26 @@ ask_confirm() {
     fi
 }
 
+get_ip_address() {
+    local prompt="$1"
+    local default="${2:-}"
+    local ip=""
+    while [[ -z "$ip" ]]; do
+        if [[ -n "$default" ]]; then
+            read -p "${prompt} [${default}]: " ip
+            ip="${ip:-$default}"
+        else
+            read -p "${prompt}: " ip
+        fi
+        # Basic validation: check if it looks like an IP address
+        if [[ -n "$ip" ]] && [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "Warning: '$ip' does not look like a valid IP address. Please try again."
+            ip=""
+        fi
+    done
+    echo "$ip"
+}
+
 install_opencode() {
     echo "=== Installing OpenCode ==="
     
@@ -39,7 +59,31 @@ install_opencode() {
     
     if ask_confirm "Install OpenCode personal config?"; then
         echo "Installing OpenCode config from $OPENCODE_CONFIG_URL"
-        # Clone config and symlink files
+        
+        # Create config directory if it doesn't exist
+        mkdir -p ~/.config/opencode
+        
+        # Clone the config repo (or copy if local)
+        if [[ -d "$OPENCODE_CONFIG_URL" ]]; then
+            cp -r "$OPENCODE_CONFIG_URL"/* ~/.config/opencode/
+        else
+            echo "Cloning config repo..."
+            # For SSH access: git clone git@github.com:${GITHUB_USER}/opencode-config.git ~/.config/opencode
+            # For HTTPS with credentials: git clone https://github.com/${GITHUB_USER}/opencode-config.git ~/.config/opencode
+            echo "Run: git clone git@github.com:${GITHUB_USER}/opencode-config.git ~/.config/opencode"
+        fi
+        
+        # Prompt for local server IP
+        echo ""
+        echo "Enter your local server IP address for the OpenCode model:"
+        SERVER_IP=$(get_ip_address "IP address" "192.168.100.80")
+        echo "Using IP: $SERVER_IP"
+        
+        # Generate config.json from template
+        if [[ -f ~/.config/opencode/config.template.json ]]; then
+            sed "s/<YOUR_LOCAL_IP>/${SERVER_IP}/g" ~/.config/opencode/config.template.json > ~/.config/opencode/config.json
+            echo "Generated ~/.config/opencode/config.json with IP: $SERVER_IP"
+        fi
     else
         echo "Skipping OpenCode config installation."
     fi
@@ -60,7 +104,10 @@ install_neovim() {
     
     if ask_confirm "Install Neovim personal config?"; then
         echo "Installing Neovim config from $NEOVIM_CONFIG_URL"
-        # Clone config and symlink files
+        mkdir -p ~/.config
+        rm -rf ~/.config/nvim
+        git clone "$NEOVIM_CONFIG_URL" ~/.config/nvim
+        echo "Neovim config installed to ~/.config/nvim"
     else
         echo "Skipping Neovim config installation."
     fi
@@ -81,9 +128,13 @@ install_tmux() {
     
     if ask_confirm "Install tmux config?"; then
         echo "Installing tmux config from $TMUX_CONFIG_URL"
-        # Clone config and symlink files
+        mkdir -p ~/.tmux-config
+        rm -f ~/.tmux.conf
+        git clone "$TMUX_CONFIG_URL" ~/.tmux-config
+        ln -s ~/.tmux-config/.tmux.conf ~/.tmux.conf
+        echo "tmux config installed and symlinked"
     else
-        echo "Skipping tmux config installation."
+        echo "Skipping tmux config."
     fi
 }
 
