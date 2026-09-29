@@ -49,7 +49,20 @@ detect_platform() {
         PLATFORM="macos"
     elif [[ -f /etc/os-release ]]; then
         . /etc/os-release
-        PLATFORM="$ID"
+        case "$ID" in
+            ubuntu|debian|linuxmint)
+                PLATFORM="linux"
+                ;;
+            arch|manjaro)
+                PLATFORM="arch"
+                ;;
+            fedora|rhel|centos)
+                PLATFORM="fedora"
+                ;;
+            *)
+                PLATFORM="linux"
+                ;;
+        esac
     else
         PLATFORM="unknown"
     fi
@@ -110,8 +123,9 @@ install_neovim() {
             macos)
                 brew install neovim
                 ;;
-            ubuntu|debian)
-                sudo apt-get update && sudo apt-get install -y neovim
+            ubuntu|debian|linux)
+                echo "Compiling Neovim from source for Linux..."
+                install_neovim_linux
                 ;;
             arch)
                 sudo pacman -S --noconfirm neovim
@@ -136,6 +150,35 @@ install_neovim() {
     fi
 }
 
+install_neovim_linux() {
+    # Install build dependencies
+    echo "Installing build dependencies..."
+    sudo apt-get update
+    sudo apt-get install -y ninja-build gettext cmake build-essential curl git unzip
+    
+    # Clone and build Neovim
+    echo "Cloning Neovim repository..."
+    TEMP_DIR="/tmp/neovim-build-$$"
+    mkdir -p "$TEMP_DIR"
+    cd "$TEMP_DIR"
+    git clone https://github.com/neovim/neovim.git
+    cd neovim
+    git checkout stable
+    
+    echo "Building Neovim..."
+    make CMAKE_BUILD_TYPE=RelWithDebInfo
+    
+    echo "Installing Neovim..."
+    sudo make install
+    
+    # Cleanup
+    cd -
+    rm -rf "$TEMP_DIR"
+    
+    echo "Neovim installed successfully!"
+    nvim --version | head -1
+}
+
 install_tmux() {
     echo "=== Installing tmux ==="
     
@@ -149,11 +192,14 @@ install_tmux() {
             macos)
                 brew install tmux
                 ;;
-            ubuntu|debian)
+            linux)
                 sudo apt-get update && sudo apt-get install -y tmux
                 ;;
             arch)
                 sudo pacman -S --noconfirm tmux
+                ;;
+            fedora)
+                sudo dnf install -y tmux
                 ;;
             *)
                 echo "Platform $PLATFORM detected. Install tmux manually:"

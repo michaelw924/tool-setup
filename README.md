@@ -30,11 +30,14 @@ After each tool installation, you can choose to install your personal config fro
 
 ## Platform Support
 
-| Platform | Package Manager |
-|----------|----------------|
-| macOS | Homebrew |
-| Ubuntu/Debian | apt |
-| Arch Linux | pacman |
+| Platform | Package Manager | Neovim |
+|----------|----------------|--------|
+| macOS | Homebrew | brew install |
+| Ubuntu/Debian | apt | Compile from source |
+| Arch Linux | pacman | pacman -S |
+| Fedora | dnf | dnf install |
+
+**Note:** Neovim is compiled from source on Linux for the latest version.
 
 ## Config Repos
 
